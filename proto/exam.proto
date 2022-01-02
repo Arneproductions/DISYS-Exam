@@ -1,0 +1,8 @@
+syntax = "proto3";
+option go_package = "exam/proto";
+
+service Exam {
+    rpc HelloWorld (Empty) returns (Empty);
+}
+
+message Empty {}
