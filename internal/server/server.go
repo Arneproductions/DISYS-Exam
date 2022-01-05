@@ -241,7 +241,6 @@ func (n *Node) SendElection() {
 
 	for idx, replicaIp := range n.replicas {
 
-		log.Printf("leaderIp: %s, ReplicaIp: %s", n.leaderIp, replicaIp)
 		// Do not send election request to dead old leader
 		if strings.HasPrefix(replicaIp, n.ip) || len(replicaIp) == 0 || replicaIp == n.leaderIp {
 

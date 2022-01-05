@@ -2,8 +2,8 @@
 Template project for the Distributed Systems Exam at the IT University of Copenhagen
 
 ## Guide to run this application
-If you have docker you can then use the command 'docker compose up'.
-Everything should then start up an show in the terminal
+If you have docker you can then use the command `docker compose up` at the root of the application.
+Everything should then start up and show in the terminal.
 
 ## Guide to generate compiled proto files
 It is necessary to the following in order to compile the proto file into something that you can use in your GoLang project.
