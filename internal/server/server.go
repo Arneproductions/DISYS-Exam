@@ -96,11 +96,20 @@ func (n *Node) StartServer() {
 }
 
 func (n *Node) Get(ctx context.Context, message *proto.GetMessage) (*proto.GetReply, error) {
-	n.valueMutex.RLock()
-	defer n.valueMutex.RUnlock()
 
-	value := n.values[message.GetKey()]
-	return &proto.GetReply{Value: value}, nil
+	if n.HasStatus(Leader) {
+
+		n.valueMutex.RLock()
+		defer n.valueMutex.RUnlock()
+
+		value := n.values[message.GetKey()]
+		return &proto.GetReply{Value: value}, nil
+	} else if n.HasStatus(Replica) {
+
+		return n.SendGetToLeader(message)
+	}
+
+	return nil, errors.New("node has a state where an election is ongoing")
 }
 
 func (n *Node) Put(ctx context.Context, message *proto.PutMessage) (*proto.PutReply, error) {
@@ -147,10 +156,25 @@ func (n *Node) Put(ctx context.Context, message *proto.PutMessage) (*proto.PutRe
 	return &proto.PutReply{Success: false}, nil
 }
 
-func (n *Node) SendGet(ip string, message *proto.GetMessage) (*proto.GetReply, error) {
+func (n *Node) SendGetToLeader(message *proto.GetMessage) (*proto.GetReply, error) {
+	conn, err := grpc.Dial(n.leaderIp, grpc.WithInsecure(), grpc.FailOnNonTempDialError(true), grpc.WithBlock())
+	if err != nil {
+		log.Printf("Could not connect: %v\n", err)
+		n.declareReplicaDeadByIp(n.leaderIp)
+		return nil, errors.New("replica is not reachable")
+	}
+	defer conn.Close()
 
+	c := proto.NewReplicationClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	if resp, err := c.Get(ctx, message); err != nil {
+		return nil, err
+	} else {
+		return resp, nil
+	}
 }
-
 
 func (n *Node) SendPut(ip string, message proto.PutMessage) (*proto.PutReply, error) {
 	conn, err := grpc.Dial(ip, grpc.WithInsecure(), grpc.FailOnNonTempDialError(true), grpc.WithBlock())
