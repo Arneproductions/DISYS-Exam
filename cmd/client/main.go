@@ -25,17 +25,17 @@ func main(){
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	inc(c, ctx)
+	put(c, ctx)
 	
 }
 
-func inc(c proto.ReplicationClient, ctx context.Context) (int32,error) {
-	reply, err := c.Increment(ctx, &proto.Empty{})
+func put(c proto.ReplicationClient, ctx context.Context) (bool,error) {
+	reply, err := c.Put(ctx, &proto.PutMessage{Key: 1, Value: 10})
 
 	if err != nil {
 		log.Printf("Failed to increment: %v\n", err)
-		return 0,err
+		return false,err
 	}
 
-	return reply.Value, nil
+	return reply.Success, nil
 }
