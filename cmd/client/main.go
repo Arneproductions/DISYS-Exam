@@ -121,6 +121,7 @@ func put(key int64, value int64) bool {
 	if err != nil {
 		log.Printf("Could not connect: %v\n", err)
 		nextNode()
+		return false
 	}
 	defer conn.Close()
 
@@ -152,6 +153,7 @@ func get(key int64) (int64, bool) {
 	if err != nil {
 		log.Printf("Could not connect: %v\n", err)
 		nextNode()
+		return 0, false
 	}
 	defer conn.Close()
 
