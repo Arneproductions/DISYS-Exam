@@ -1,8 +1,46 @@
 syntax = "proto3";
 option go_package = "exam/proto";
 
-service Exam {
-    rpc HelloWorld (Empty) returns (Empty);
+service Replication {
+    rpc Get (GetMessage) returns (GetReply);
+    rpc Put (PutMessage) returns (PutReply);
+}
+
+service Election {
+    rpc Election (Empty) returns (ElectionMessage);
+    rpc Elected (ElectedMessage) returns (Empty);
+    rpc Heartbeat (HeartbeatMessage) returns (Empty);
 }
 
 message Empty {}
+
+message GetReply {
+    int64 value = 1;
+}
+
+message GetMessage {
+    int64 key = 1;
+}
+
+message PutReply {
+    bool success = 1;
+}
+
+message PutMessage {
+    int64 key = 1;
+    int64 value = 2;
+}
+
+message ElectionMessage {
+    map<int64, int64> values = 1;
+    int32 processId = 2;
+}
+
+message ElectedMessage {
+    map<int64, int64> values = 1;
+    string leaderIp = 2;
+}
+
+message HeartbeatMessage {
+    repeated string Replicas = 1;
+}
