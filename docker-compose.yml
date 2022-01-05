@@ -33,6 +33,22 @@ services:
       REPLICAS: "172.16.238.2:5001,172.16.238.3:5001,172.16.238.4:5001"
       LEADER: FALSE
 
+  client-1:
+    depends_on:
+      - replica-1
+      - replica-2
+      - replica-3
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.6
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    environment:
+      SERVERADDR: "172.16.238.2:5001,172.16.238.3:5001,172.16.238.4:5001" 
+
+  
+
 networks:
   app_net:
     ipam:

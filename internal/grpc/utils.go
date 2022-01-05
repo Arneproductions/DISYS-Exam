@@ -14,3 +14,7 @@ func GetClientIpAddress(c context.Context) string {
 		return ""
 	}
 }
+
+func IsAnElectionError(err error) bool {
+	return "ELECTION_ONGOING" == err.Error()
+}
