@@ -222,8 +222,6 @@ func (n *Node) Elected(ctx context.Context, in *proto.ElectedMessage) (*proto.Em
 
 func (n *Node) Heartbeat(ctx context.Context, in *proto.HeartbeatMessage) (*proto.Empty, error) {
 
-	log.Printf("Recieved heartbeat: %v", in.GetReplicas())
-
 	n.replicas = in.GetReplicas() // Update list of replicas
 	n.electionTime = time.Now()
 
@@ -320,8 +318,6 @@ func (n *Node) SendElected(electedIp string) {
 }
 
 func (n *Node) SendHeartbeat() {
-
-	log.Println("Sending heartbeat...")
 
 	for idx, replicaIp := range n.replicas {
 
