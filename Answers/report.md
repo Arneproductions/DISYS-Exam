@@ -7,8 +7,6 @@ Course code: BSDISYS1KU
 
 I hereby declare that this submission was created in its entirety by me and only me.
 
-<<*Insert description here about where the inspiration of the code came from*>>
-
 ## 1. Questions
 
 1. Question 
@@ -44,7 +42,7 @@ I hereby declare that this submission was created in its entirety by me and only
 
 
 ## 2. Implementation
-bla bla
+I have in my implementation taken some inspiration from my [Mock exam](https://github.com/Arneproductions/DISYS-Passive-Replication) attemt which i have created together with ABSO. I have also reused the parts about RPC from our [mandatory exercise 1](https://github.com/Arneproductions/DISYS-Exercise-1).
 
 ## 3. Implementation discussion
 bla bla
