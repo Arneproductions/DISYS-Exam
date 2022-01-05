@@ -273,7 +273,7 @@ func (n *Node) SendElection() {
 		}
 	}
 
-	n.SendElected(currentHighestIp)
+	n.SendElected(currentHighestIp, currentHighestValue)
 
 	if strings.HasPrefix(currentHighestIp, n.ip) {
 		n.SetStatus(Leader)
@@ -287,7 +287,7 @@ func (n *Node) SendElection() {
 	}
 }
 
-func (n *Node) SendElected(electedIp string) {
+func (n *Node) SendElected(electedIp string, values map[int64]int64) {
 
 	log.Println("Sending elected...")
 
@@ -310,7 +310,7 @@ func (n *Node) SendElected(electedIp string) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		if _, err := c.Elected(ctx, &proto.ElectedMessage{LeaderIp: electedIp}); err != nil {
+		if _, err := c.Elected(ctx, &proto.ElectedMessage{LeaderIp: electedIp, Values: values}); err != nil {
 
 			defer n.declareReplicaDead(idx)
 		}
@@ -371,6 +371,8 @@ func (n *Node) SetStatus(status NodeStatus) {
 func (n *Node) SetValues(values map[int64]int64) {
 	n.valueMutex.Lock()
 	defer n.valueMutex.Unlock()
+
+	log.Printf("Setting values to: %v", values)
 
 	n.values = values
 }
