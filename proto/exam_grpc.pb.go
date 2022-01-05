@@ -18,7 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReplicationClient interface {
-	Increment(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ReplicaReply, error)
+	Get(ctx context.Context, in *GetMessage, opts ...grpc.CallOption) (*GetReply, error)
+	Put(ctx context.Context, in *PutMessage, opts ...grpc.CallOption) (*PutReply, error)
 }
 
 type replicationClient struct {
@@ -29,9 +30,18 @@ func NewReplicationClient(cc grpc.ClientConnInterface) ReplicationClient {
 	return &replicationClient{cc}
 }
 
-func (c *replicationClient) Increment(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ReplicaReply, error) {
-	out := new(ReplicaReply)
-	err := c.cc.Invoke(ctx, "/Replication/Increment", in, out, opts...)
+func (c *replicationClient) Get(ctx context.Context, in *GetMessage, opts ...grpc.CallOption) (*GetReply, error) {
+	out := new(GetReply)
+	err := c.cc.Invoke(ctx, "/Replication/Get", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *replicationClient) Put(ctx context.Context, in *PutMessage, opts ...grpc.CallOption) (*PutReply, error) {
+	out := new(PutReply)
+	err := c.cc.Invoke(ctx, "/Replication/Put", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +52,8 @@ func (c *replicationClient) Increment(ctx context.Context, in *Empty, opts ...gr
 // All implementations must embed UnimplementedReplicationServer
 // for forward compatibility
 type ReplicationServer interface {
-	Increment(context.Context, *Empty) (*ReplicaReply, error)
+	Get(context.Context, *GetMessage) (*GetReply, error)
+	Put(context.Context, *PutMessage) (*PutReply, error)
 	mustEmbedUnimplementedReplicationServer()
 }
 
@@ -50,8 +61,11 @@ type ReplicationServer interface {
 type UnimplementedReplicationServer struct {
 }
 
-func (UnimplementedReplicationServer) Increment(context.Context, *Empty) (*ReplicaReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Increment not implemented")
+func (UnimplementedReplicationServer) Get(context.Context, *GetMessage) (*GetReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedReplicationServer) Put(context.Context, *PutMessage) (*PutReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Put not implemented")
 }
 func (UnimplementedReplicationServer) mustEmbedUnimplementedReplicationServer() {}
 
@@ -66,20 +80,38 @@ func RegisterReplicationServer(s grpc.ServiceRegistrar, srv ReplicationServer) {
 	s.RegisterService(&Replication_ServiceDesc, srv)
 }
 
-func _Replication_Increment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+func _Replication_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ReplicationServer).Increment(ctx, in)
+		return srv.(ReplicationServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Replication/Increment",
+		FullMethod: "/Replication/Get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReplicationServer).Increment(ctx, req.(*Empty))
+		return srv.(ReplicationServer).Get(ctx, req.(*GetMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Replication_Put_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PutMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReplicationServer).Put(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Replication/Put",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReplicationServer).Put(ctx, req.(*PutMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -92,8 +124,12 @@ var Replication_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ReplicationServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Increment",
-			Handler:    _Replication_Increment_Handler,
+			MethodName: "Get",
+			Handler:    _Replication_Get_Handler,
+		},
+		{
+			MethodName: "Put",
+			Handler:    _Replication_Put_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
