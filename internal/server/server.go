@@ -109,7 +109,7 @@ func (n *Node) Get(ctx context.Context, message *proto.GetMessage) (*proto.GetRe
 		return n.SendGetToLeader(message)
 	}
 
-	return nil, errors.New("node has a state where an election is ongoing")
+	return nil, errors.New("ELECTION_ONGOING")
 }
 
 func (n *Node) Put(ctx context.Context, message *proto.PutMessage) (*proto.PutReply, error) {
