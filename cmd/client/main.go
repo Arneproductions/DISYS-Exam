@@ -115,7 +115,7 @@ func interact() {
 func put(key int64, value int64) bool {
 
 	log.Printf("Put value %d at key %d\n", value, key)
-	log.Printf("Dialing %s\n", *serverAddr)
+	log.Printf("Dialing %s\n", nodes[nodeIndex])
 
 	conn, err := grpc.Dial(nodes[nodeIndex], grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -146,7 +146,7 @@ func put(key int64, value int64) bool {
 
 func get(key int64) (int64, bool) {
 
-	log.Printf("Dialing %s\n", *serverAddr)
+	log.Printf("Dialing %s\n", nodes[nodeIndex])
 
 	conn, err := grpc.Dial(nodes[nodeIndex], grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
