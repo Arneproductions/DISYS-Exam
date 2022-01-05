@@ -95,6 +95,14 @@ func (n *Node) StartServer() {
 	}
 }
 
+func (n *Node) Get(ctx context.Context, message *proto.GetMessage) (*proto.GetReply, error) {
+	n.valueMutex.RLock()
+	defer n.valueMutex.RUnlock()
+
+	value := n.values[message.GetKey()]
+	return &proto.GetReply{Value: value}, nil
+}
+
 func (n *Node) Put(ctx context.Context, message *proto.PutMessage) (*proto.PutReply, error) {
 	if n.HasStatus(Leader) {
 
@@ -139,6 +147,11 @@ func (n *Node) Put(ctx context.Context, message *proto.PutMessage) (*proto.PutRe
 	return &proto.PutReply{Success: false}, nil
 }
 
+func (n *Node) SendGet(ip string, message *proto.GetMessage) (*proto.GetReply, error) {
+
+}
+
+
 func (n *Node) SendPut(ip string, message proto.PutMessage) (*proto.PutReply, error) {
 	conn, err := grpc.Dial(ip, grpc.WithInsecure(), grpc.FailOnNonTempDialError(true), grpc.WithBlock())
 	if err != nil {
@@ -163,11 +176,10 @@ func (n *Node) Election(ctx context.Context, in *proto.Empty) (*proto.ElectionMe
 	log.Print("Election request recieved...")
 	n.SetStatus(ElectionOngoing)
 
-	return &proto.ElectionMessage{Value: n.value, ProcessId: n.id}, nil
+	return &proto.ElectionMessage{ProcessId: n.id}, nil
 }
 
 func (n *Node) Elected(ctx context.Context, in *proto.ElectedMessage) (*proto.Empty, error) {
-
 	n.leaderIp = in.GetLeaderIp()
 
 	if strings.HasPrefix(n.leaderIp, n.ip) {
@@ -175,6 +187,7 @@ func (n *Node) Elected(ctx context.Context, in *proto.ElectedMessage) (*proto.Em
 		go n.runHeartbeatProcess()
 	} else {
 		n.SetStatus(Replica)
+		n.SetValues(in.Values)
 		n.electionTime = time.Now()
 
 		go n.runElectionProcess()
@@ -198,7 +211,7 @@ func (n *Node) SendElection() {
 	log.Println("Sending election requests...")
 	n.SetStatus(WaitingVotes)
 
-	currentHighestValue := n.value
+	currentHighestValue := n.values
 	currentHighestIp := n.ip + ":5001"
 	currentHighestId := n.id
 
@@ -231,9 +244,9 @@ func (n *Node) SendElection() {
 			defer n.declareReplicaDead(idx)
 		}
 
-		if (voteReply.Value > currentHighestValue) || (voteReply.Value == currentHighestValue && voteReply.ProcessId > currentHighestId) {
+		if voteReply.ProcessId > currentHighestId {
+			currentHighestValue = voteReply.Values
 			currentHighestId = voteReply.ProcessId
-			currentHighestValue = voteReply.Value
 			currentHighestIp = replicaIp
 		}
 	}
@@ -246,6 +259,8 @@ func (n *Node) SendElection() {
 		go n.runHeartbeatProcess()
 	} else {
 		n.SetStatus(Replica)
+		n.SetValues(currentHighestValue)
+
 		go n.runElectionProcess()
 	}
 }
@@ -331,6 +346,20 @@ func (n *Node) SetStatus(status NodeStatus) {
 
 	log.Println("Setting status to: " + status.String())
 	n.status = status
+}
+
+func (n *Node) SetValues(values map[int64]int64) {
+	n.valueMutex.Lock()
+	defer n.valueMutex.Unlock()
+
+	n.values = values
+}
+
+func (n *Node) GetValue(key int64) int64 {
+	n.valueMutex.RLock()
+	defer n.valueMutex.RUnlock()
+
+	return n.values[key]
 }
 
 func (n *Node) HasStatus(status NodeStatus) bool {

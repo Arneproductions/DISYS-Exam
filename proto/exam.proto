@@ -32,12 +32,13 @@ message PutMessage {
 }
 
 message ElectionMessage {
-    int32 value = 1;
+    map<int64, int64> values = 1;
     int32 processId = 2;
 }
 
 message ElectedMessage {
-    string leaderIp = 1;
+    map<int64, int64> values = 1;
+    string leaderIp = 2;
 }
 
 message HeartbeatMessage {
