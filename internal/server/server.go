@@ -3,12 +3,12 @@ package server
 import (
 	"context"
 	"errors"
+	grpcUtil "exam/internal/grpc"
+	proto "exam/proto"
 	"log"
 	"math/rand"
 	"net"
 	"os"
-	grpcUtil "exam/internal/grpc"
-	proto "exam/proto"
 	"strings"
 	"sync"
 	"time"
@@ -45,7 +45,7 @@ type Node struct {
 	ip           string
 	status       NodeStatus
 	leaderIp     string
-	value        int32
+	values       map[int64]int64
 	replicas     []string
 	electionTime time.Time
 	statusMutex  sync.RWMutex
@@ -63,7 +63,7 @@ func CreateNewNode(ip string, status NodeStatus, leaderIp string, replicas []str
 		ip:           ip,
 		status:       status,
 		leaderIp:     leaderIp,
-		value:        0,
+		values:       make(map[int64]int64),
 		replicas:     replicas,
 		electionTime: time.Now(),
 		statusMutex:  sync.RWMutex{},
@@ -95,13 +95,13 @@ func (n *Node) StartServer() {
 	}
 }
 
-func (n *Node) Increment(ctx context.Context, message *proto.Empty) (*proto.ReplicaReply, error) {
+func (n *Node) Put(ctx context.Context, message *proto.PutMessage) (*proto.PutReply, error) {
 	if n.HasStatus(Leader) {
 
 		n.valueMutex.Lock()
-		n.value++
-		log.Printf("Value is being incremented (as a leader) to: %v", n.value)
-		n.valueMutex.Unlock()
+		defer n.valueMutex.Unlock()
+		n.values[message.GetKey()] = message.GetValue()
+		log.Printf("Key %v now has a value of %v set as a leader", message.GetKey(), message.GetValue())
 
 		// Update replicas
 		for idx, v := range n.replicas {
@@ -111,33 +111,35 @@ func (n *Node) Increment(ctx context.Context, message *proto.Empty) (*proto.Repl
 				continue
 			}
 
-			if _, err := n.SendIncrement(v); err != nil {
+			if _, err := n.SendPut(v, *message); err != nil {
 				// Replica does not respond and is now declared dead
 				n.declareReplicaDead(idx)
 			}
 		}
 
-		return &proto.ReplicaReply{Value: n.value}, nil
+		return &proto.PutReply{Success: true}, nil
 	} else if n.HasStatus(Replica) {
 
 		if n.requestIsFromLeader(ctx) {
 
 			n.valueMutex.Lock()
-			n.value++
-			log.Printf("Value is being incremented to: %v", n.value)
-			n.valueMutex.Unlock()
+			defer n.valueMutex.Unlock()
+			n.values[message.GetKey()] = message.GetValue()
+			log.Printf("Key %v now has a value of %v", message.GetKey(), message.GetValue())
+
+			return &proto.PutReply{Success: true}, nil
 		} else {
 
 			// Send to leader so it can handle it
-			return n.SendIncrement(n.leaderIp)
+			return n.SendPut(n.leaderIp, *message)
 		}
 	}
 
-	// If the node is not a Leader or a replica then return error
-	return nil, errors.New("election is ongoing")
+	// If the node is not a Leader nor a replica then return false because they are in a election state
+	return &proto.PutReply{Success: false}, nil
 }
 
-func (n *Node) SendIncrement(ip string) (*proto.ReplicaReply, error) {
+func (n *Node) SendPut(ip string, message proto.PutMessage) (*proto.PutReply, error) {
 	conn, err := grpc.Dial(ip, grpc.WithInsecure(), grpc.FailOnNonTempDialError(true), grpc.WithBlock())
 	if err != nil {
 		log.Printf("Could not connect: %v\n", err)
@@ -150,7 +152,7 @@ func (n *Node) SendIncrement(ip string) (*proto.ReplicaReply, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if resp, err := c.Increment(ctx, &proto.Empty{}); err != nil {
+	if resp, err := c.Put(ctx, &message); err != nil {
 		return nil, err
 	} else {
 		return resp, nil
@@ -224,7 +226,6 @@ func (n *Node) SendElection() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		
 		voteReply, err := c.Election(ctx, &proto.Empty{})
 		if err != nil {
 			defer n.declareReplicaDead(idx)
