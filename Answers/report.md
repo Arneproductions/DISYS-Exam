@@ -12,34 +12,34 @@ I hereby declare that this submission was created in its entirety by me and only
 ## 1. Questions
 
 1. Question 
-   * Answer:
+   * Answer: 1
 
 2. Question 
-   * Answer:
+   * Answer: 2
 
 3. Question 
-   * Answer:
+   * Answer: 3
 
 4. Question 
-   * Answer:
+   * Answer: 1
 
 5. Question 
-   * Answer:
+   * Answer: 2
 
 6. Question 
-   * Answer:
+   * Answer: 1
 
 7. Question 
-   * Answer:
+   * Answer: 2
 
 8. Question 
-   * Answer:
+   * Answer: 3
 
 9. Question 
-   * Answer:
+   * Answer: 2
 
 10. Question 
-    * Answer:
+    * Answer: 1
 
 
 
